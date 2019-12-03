@@ -45,6 +45,8 @@ struct MotorConfig
    double kd                       = 0.0;
    double gear_ratio               = 0.0;
    double encoder_res              = 0.0;
+   double adc_conv_mm_per_tick     = 0.0;
+   double adc_offs_mm              = 0.0;
 };
 
 // config struct for one motor controller

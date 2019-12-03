@@ -22,7 +22,7 @@ namespace evo {
 
 LiftController::LiftController() :
     _logger_prefix("LiftController: "), _is_initialized(false),
-    _max_moving_speed(0.65)
+    _max_moving_speed(65.0)
 {
    evo::log::init("");
 }
@@ -75,6 +75,17 @@ void LiftController::setMaxMovingSpeed(const double max_pwm_value)
                       << max_pwm_value << "! limit is 0.65 for the current setup!"
                       << evo::error;
    }
+}
+
+const std::vector<float> LiftController::getPositionVec(void)
+{
+   std::vector<float> position_vec;
+   for(auto& lift_motor : _vec_lift_motors)
+   {
+      position_vec.push_back(lift_motor->getPositionMM());
+   }
+
+   return position_vec;
 }
 
 } // namespace evo

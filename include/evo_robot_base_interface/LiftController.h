@@ -41,6 +41,8 @@ class LiftController
 
    void setMotorRef(std::shared_ptr<evo_mbed::Motor> motor,
                     const uint8_t motor_mapping);
+
+   const std::vector<float> getPositionVec(void);
 };
 
 } // namespace evo

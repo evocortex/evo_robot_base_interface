@@ -144,17 +144,35 @@ const bool MotorManager::initMotor(std::shared_ptr<evo_mbed::Motor> motor,
       error_occured |= true;
    }
 
-   if(!motor->setEncoderResolution(motor_config.encoder_res))
+   if(evo_mbed::MOTOR_TYPE_DRIVE == motor_config.type)
    {
-      evo::log::get() << logger_prefix << "failed to set encoder resolution!"
-                      << evo::error;
-      error_occured |= true;
-   }
+      if(!motor->setEncoderResolution(motor_config.encoder_res))
+      {
+         evo::log::get() << logger_prefix << "failed to set encoder resolution!"
+                        << evo::error;
+         error_occured |= true;
+      }
 
-   if(!motor->setGearRatio(motor_config.gear_ratio))
+      if(!motor->setGearRatio(motor_config.gear_ratio))
+      {
+         evo::log::get() << logger_prefix << "failed to set gear ratio!" << evo::error;
+         error_occured |= true;
+      }
+   }  
+
+   else if(evo_mbed::MOTOR_TYPE_LIFT == motor_config.type)
    {
-      evo::log::get() << logger_prefix << "failed to set gear ratio!" << evo::error;
-      error_occured |= true;
+      if(!motor->setConvFacAdcMMPerTick(motor_config.adc_conv_mm_per_tick))
+      {
+         evo::log::get() << logger_prefix << "failed to set adc conversion factor!" << evo::error;
+         error_occured |= true;
+      }
+
+      if(!motor->setOffsAdcMM(motor_config.adc_offs_mm))
+      {
+         evo::log::get() << logger_prefix << "failed to set adc offset!" << evo::error;
+         error_occured |= true;
+      }
    }
 
    // try to enable the motor to see if the config would work
