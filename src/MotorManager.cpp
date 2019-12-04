@@ -379,4 +379,46 @@ const bool MotorManager::disableAllMotors()
    return setOperationStatus(false);
 }
 
+const bool MotorManager::enableAllDriveMotors()
+{
+   bool success = true;
+
+   for(auto& shield : _vec_motor_shields) {
+      for(auto drive_idx = 0u; drive_idx < evo_mbed::MOTOR_SHIELD_DRIVES; drive_idx++) {
+         auto drive = shield->getMotor(drive_idx);
+
+         if(evo_mbed::MOTOR_TYPE_DRIVE == drive->getType()) {
+            if(evo_mbed::MOTOR_STS_DISABLED == drive->getOperationStatus()) {
+               if(!drive->setOperationStatus(evo_mbed::MOTOR_STS_ENABLED)) {
+                  success = false;
+               }
+            }
+         }
+      }
+   }
+
+   return success;
+}
+
+const bool MotorManager::disableAllDriveMotors()
+{
+   bool success = true;
+
+   for(auto& shield : _vec_motor_shields) {
+      for(auto drive_idx = 0u; drive_idx < evo_mbed::MOTOR_SHIELD_DRIVES; drive_idx++) {
+         auto drive = shield->getMotor(drive_idx);
+
+         if(evo_mbed::MOTOR_TYPE_DRIVE == drive->getType()) {
+            if(evo_mbed::MOTOR_STS_ENABLED == drive->getOperationStatus()) {
+               if(!drive->setOperationStatus(evo_mbed::MOTOR_STS_DISABLED)) {
+                  success = false;
+               }
+            }
+         }
+      }
+   }
+
+   return success;
+}
+
 } // namespace evo

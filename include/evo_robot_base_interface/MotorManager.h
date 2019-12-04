@@ -137,6 +137,20 @@ class MotorManager
    const bool disableAllMotors();
 
    /**
+    * @brief enableAllDriveMotors - calls setOperationStatus with param TRUE for all drives
+    * 
+    * @return true if successful
+    */
+   const bool enableAllDriveMotors();
+
+   /**
+    * @brief disableAllDriveMotors - calls setOperationStatus with param TRUE for all drives
+    * 
+    * @return true if successful
+    */
+   const bool disableAllDriveMotors();
+
+   /**
     * @brief Checks if all drives are in "ok" state
     *
     * @return true All drives in no error state
