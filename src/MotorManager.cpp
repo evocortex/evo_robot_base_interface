@@ -394,6 +394,8 @@ const bool MotorManager::enableAllDriveMotors()
                }
             }
          }
+
+         std::this_thread::sleep_for(std::chrono::milliseconds(75u));
       }
    }
 
