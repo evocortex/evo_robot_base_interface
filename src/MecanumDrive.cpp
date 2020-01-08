@@ -276,10 +276,8 @@ MecanumPose MecanumDrive::getPoseIncrement()
       // calc pose increment
       MecanumPose odom;
       odom._x_m = _rot2m * (rot_dif_FL + rot_dif_FR + rot_dif_BL + rot_dif_BR) / 4.0;
-      odom._y_m =
-          _rot2m * (-rot_dif_FL + rot_dif_FR + rot_dif_BL - rot_dif_BR) / 4.0;
-      odom._yaw_rad = _rot2m * (-rot_dif_FL + rot_dif_FR - rot_dif_BL + rot_dif_BR) /
-                      (4.0 * _wheel_separation_sum_in_m);
+      odom._y_m = _rot2m * (-rot_dif_FL + rot_dif_FR + rot_dif_BL - rot_dif_BR) / 4.0;
+      odom._yaw_rad = _rot2m * (-rot_dif_FL + rot_dif_FR - rot_dif_BL + rot_dif_BR) / (4.0 * _wheel_separation_sum_in_m);
       return odom;
    }
    else
@@ -294,6 +292,9 @@ MecanumPose MecanumDrive::getPoseIncrement()
 /// all motors in motor handler
 void MecanumDrive::debugMotorMapping()
 {
+   evo::log::get() << _logger_prefix << "Debug Motor Mapping is NOT implemented!" << evo::error;
+   return;
+
    if(_is_initialized)
    {
       bool error_flag                 = false;

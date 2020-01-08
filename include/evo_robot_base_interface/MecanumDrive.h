@@ -57,10 +57,10 @@ struct MecanumPose
 
    void updatePoseFromIncrement(const MecanumPose& inc)
    {
-      this->_x_m +=
-          std::cos(this->_yaw_rad) * inc._x_m - std::sin(this->_yaw_rad) * inc._y_m;
-      this->_y_m +=
-          std::sin(this->_yaw_rad) * inc._x_m + std::cos(this->_yaw_rad) * inc._y_m;
+      this->_x_m +=  std::cos(this->_yaw_rad) * inc._x_m - 
+                     std::sin(this->_yaw_rad) * inc._y_m;
+      this->_y_m +=  std::sin(this->_yaw_rad) * inc._x_m + 
+                     std::cos(this->_yaw_rad) * inc._y_m;
       this->_yaw_rad += inc._yaw_rad;
    }
 };
