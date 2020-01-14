@@ -39,9 +39,16 @@ class LiftController
 
    bool setMovingDirection(const int8_t direction);
 
+ /**
+     * @brief Set the Motor Ref object
+     * 
+     * @param motor - evo mbed motor object
+     * @param motor_mapping - use ENUM MOTOR_MAPPING_LIFT to virtually place motors at correct position
+     */
    void setMotorRef(std::shared_ptr<evo_mbed::Motor> motor,
                     const uint8_t motor_mapping);
 
+  // marco: this is still not the correct way to return const functions. (was added by MBS)
    const std::vector<float> getPositionVec(void);
 };
 

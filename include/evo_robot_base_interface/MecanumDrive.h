@@ -93,11 +93,13 @@ class MecanumDrive
    std::shared_ptr<evo_mbed::Motor> _motor_back_left;
    std::shared_ptr<evo_mbed::Motor> _motor_back_right;
 
+   // robot dimensions
    double _wheel_radius_in_m;
    double _wheel_separation_length_in_m;
    double _wheel_separation_width_in_m;
    double _wheel_separation_sum_in_m;
 
+   // helper values for calculations
    double _ms2rpm;
    double _rpm2ms;
    double _rot2m;
@@ -107,29 +109,61 @@ class MecanumDrive
    bool _is_initialized;
    bool _verbose;
 
+   // save last ticks to create difference in getPoseIncement()
    double _last_rotation_front_left;
    double _last_rotation_front_right;
    double _last_rotation_back_left;
    double _last_rotation_back_right;
    //-------------
  public:
-   MecanumDrive();
+      MecanumDrive();
 
-   bool checkInitState();
-   void setMotorRef(std::shared_ptr<evo_mbed::Motor> motor,
-                    const uint8_t motor_mapping);
+    /**
+     * @brief checks if all motor references and robot dimensions are set
+     * 
+     * @return true if initialized correct 
+     */
+    bool checkInitState();
 
-   void setWheelRadiusInM(const double wheel_radius_in_m);
-   void setWheelSeparationLengthInM(const double wheel_separation_length_in_m);
-   void setWheelSeparationWidthInM(const double wheel_separation_Width_in_m);
-   void setWheelDistanceFrontBackInM(const double wheel_distance_front_back_in_m);
-   void setWheelDistanceLeftRightInM(const double wheel_distance_left_right_in_m);
+    /**
+     * @brief Set the virtual Motor position for the mecanum drive
+     *        Extremly important to get this right, otherwise the kinematic model is incorrect!
+     * 
+     * @param motor - motor object from evo_mbed
+     * @param motor_mapping - see ENUM MOTOR_MAPPING_MECANUM for correct motor mapping
+     */
+    void setMotorRef(std::shared_ptr<evo_mbed::Motor> motor, const uint8_t motor_mapping);
 
-   void setTargetSpeed(const MecanumVel& cmd_vel);
-   MecanumVel getOdom();
-   MecanumPose getPoseIncrement();
+    // Set the robot dimensions for this mecanum drive configuration
+    void setWheelRadiusInM(const double wheel_radius_in_m);
+    void setWheelSeparationLengthInM(const double wheel_separation_length_in_m);
+    void setWheelSeparationWidthInM(const double wheel_separation_Width_in_m);
+    void setWheelDistanceFrontBackInM(const double wheel_distance_front_back_in_m);
+    void setWheelDistanceLeftRightInM(const double wheel_distance_left_right_in_m);
 
-   void debugMotorMapping();
+    /**
+     * @brief Converts cmd vel to wheel rpm
+     * 
+     * @param cmd_vel - target speed
+     */
+    void setTargetSpeed(const MecanumVel& cmd_vel);
+
+    /**
+     * @brief Calculates wheel odometry from wheel rpm (intregral)
+     * 
+     * @return MecanumVel 
+     */
+    MecanumVel getOdom();
+
+    /**
+     * @brief Get Pose increment relative to last call. Uses absolute wheel rotation ticks.
+     * 
+     * @return MecanumPose 
+     */
+    MecanumPose getPoseIncrement();
+
+
+    void debugMotorMapping();
 };
 } // namespace evo
 #endif // MECANUMDRIVE_H

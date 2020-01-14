@@ -77,6 +77,7 @@ void LiftController::setMaxMovingSpeed(const double max_pwm_value)
    }
 }
 
+// marco: this is still wrong
 const std::vector<float> LiftController::getPositionVec(void)
 {
    std::vector<float> position_vec;
