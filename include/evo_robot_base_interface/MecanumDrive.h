@@ -25,6 +25,23 @@
 
 namespace evo {
 
+struct MecanumWheelData
+{
+   double front_left = 0.0;
+   double front_right = 0.0;
+   double back_left = 0.0;
+   double back_right = 0.0;
+
+   inline MecanumWheelData& operator*=(const double factor)
+   {
+      this->front_left *= factor;
+      this->front_right *= factor;
+      this->back_left *= factor;
+      this->back_right *= factor;
+      return *this;
+   }
+};
+
 struct MecanumVel
 {
    double _x_ms     = 0.0;
@@ -109,11 +126,16 @@ class MecanumDrive
    bool _is_initialized;
    bool _verbose;
 
+   // TODO: delete this once unused
    // save last ticks to create difference in getPoseIncement()
    double _last_rotation_front_left;
    double _last_rotation_front_right;
    double _last_rotation_back_left;
    double _last_rotation_back_right;
+
+   MecanumWheelData _last_position;
+   MecanumWheelData _current_position;
+   MecanumWheelData _current_rpm;
    //-------------
  public:
       MecanumDrive();
@@ -140,6 +162,19 @@ class MecanumDrive
     void setWheelSeparationWidthInM(const double wheel_separation_Width_in_m);
     void setWheelDistanceFrontBackInM(const double wheel_distance_front_back_in_m);
     void setWheelDistanceLeftRightInM(const double wheel_distance_left_right_in_m);
+
+    // update all wheel data 
+    bool readWheelData();
+
+    void wheelData2OdomVel(const MecanumWheelData& wd, MecanumVel& mv);
+    void wheelData2OdomPose(const MecanumWheelData& wd, MecanumPose& mp);
+    void wheelData2OdomPoseInc(const MecanumWheelData& wd, MecanumWheelData& lwd, MecanumPose& mpi);
+
+
+    bool getOdomComplete(MecanumVel& odom_vel, 
+                         MecanumPose& odom_pose_increment,
+                         MecanumWheelData& current_position,
+                         MecanumWheelData& current_velocity);
 
     /**
      * @brief Converts cmd vel to wheel rpm

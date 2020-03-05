@@ -180,6 +180,22 @@ void MecanumDrive::setTargetSpeed(const MecanumVel& cmd_vel)
       rpm_front_left *= (-1.0);
       rpm_back_left *= (-1.0);
 
+      // limit speeds
+
+      double max_ratio = 1.0;
+      double ratio = 1.0;
+      
+      //(ratio = rpm_front_left/_motor_front_left->getMAX;)
+      if(ratio > max_ratio) max_ratio = ratio;
+
+
+      rpm_back_left /= max_ratio;
+      rpm_back_right /= max_ratio;
+      rpm_front_left /= max_ratio;
+      rpm_front_right /= max_ratio;
+
+
+
       if(_verbose)
       {
          // log speeds
@@ -188,6 +204,7 @@ void MecanumDrive::setTargetSpeed(const MecanumVel& cmd_vel)
       bool error_flag = false;
       if(!_motor_front_left->setTargetSpeed(rpm_front_left))
          error_flag |= true;
+
       if(!_motor_front_right->setTargetSpeed(rpm_front_right))
          error_flag |= true;
 
@@ -208,6 +225,90 @@ void MecanumDrive::setTargetSpeed(const MecanumVel& cmd_vel)
                       << evo::error;
       checkInitState();
    }
+}
+
+bool MecanumDrive::readWheelData()
+{
+   if(_is_initialized)
+   {
+      // get wheel speeds
+      _current_rpm.front_left  = _motor_front_left->getSpeedRPM();
+      _current_rpm.front_right = _motor_front_right->getSpeedRPM();
+
+      _current_rpm.back_left  = _motor_back_left->getSpeedRPM();
+      _current_rpm.back_right = _motor_back_right->getSpeedRPM();
+
+      // get positions
+      _current_position.front_left  = _motor_front_left->getRevolutions();
+      _current_position.front_right = _motor_front_right->getRevolutions();
+
+      _current_position.back_left  = _motor_back_left->getRevolutions();
+      _current_position.back_right = _motor_back_right->getRevolutions();
+   }
+   else
+   {
+      evo::log::get() << _logger_prefix << "not initialized yet! -> check"
+                      << evo::error;
+      checkInitState();
+      return false;
+   }
+}
+
+bool MecanumDrive::getOdomComplete(MecanumVel& odom_vel, 
+                                   MecanumPose& odom_pose_increment,
+                                   MecanumWheelData& current_position,
+                                   MecanumWheelData& current_velocity)
+{
+   if(!_is_initialized)
+   {      
+      evo::log::get() << _logger_prefix << "not initialized yet! -> check"
+                      << evo::error;
+      checkInitState();
+      return false;
+   }
+   else
+   {
+      // update 
+      if(!readWheelData()) return false;
+
+      wheelData2OdomVel(_current_rpm, odom_vel);
+
+      //wheelData2OdomPose(_current_position, odom_pose);
+      wheelData2OdomPoseInc(_current_position, _last_position, odom_pose_increment);
+
+      current_position = _current_position;
+      current_position *= 2 * M_PI;
+
+      current_velocity = _current_rpm;
+      current_velocity *= M_PI / 30.0;
+   }
+}
+
+void MecanumDrive::wheelData2OdomVel(const MecanumWheelData& wd, MecanumVel& mv)
+{
+   mv._x_ms = _rpm2ms * (-wd.front_left + wd.front_right - wd.back_left + wd.back_right) / 4.0;
+   mv._y_ms = _rpm2ms * ( wd.front_left + wd.front_right - wd.back_left - wd.back_right) / 4.0;
+   mv._yaw_rads = _rpm2ms * (wd.front_left + wd.front_right + wd.back_left + wd.back_right) / (4.0 * _wheel_separation_sum_in_m);
+}
+
+void MecanumDrive::wheelData2OdomPose(const MecanumWheelData& wd, MecanumPose& mp)
+{
+   mp._x_m = _rot2m * (-wd.front_left + wd.front_right - wd.back_left + wd.back_right) / 4.0;
+   mp._y_m = _rot2m * ( wd.front_left + wd.front_right - wd.back_left - wd.back_right) / 4.0;
+   mp._yaw_rad = _rot2m * (wd.front_left + wd.front_right + wd.back_left + wd.back_right) / (4.0 * _wheel_separation_sum_in_m);
+}
+
+void MecanumDrive::wheelData2OdomPoseInc(const MecanumWheelData& wd, MecanumWheelData& lwd, MecanumPose& mpi)
+{
+   MecanumWheelData inc_wd = wd;
+   inc_wd.back_left -= lwd.back_left;
+   inc_wd.back_right -= lwd.back_right;
+   inc_wd.front_left -= lwd.front_left;
+   inc_wd.front_right -= lwd.front_right;
+
+   wheelData2OdomPose(inc_wd, mpi);
+
+   lwd = wd;   
 }
 
 MecanumVel MecanumDrive::getOdom()
@@ -276,8 +377,10 @@ MecanumPose MecanumDrive::getPoseIncrement()
       // calc pose increment
       MecanumPose odom;
       odom._x_m = _rot2m * (rot_dif_FL + rot_dif_FR + rot_dif_BL + rot_dif_BR) / 4.0;
-      odom._y_m = _rot2m * (-rot_dif_FL + rot_dif_FR + rot_dif_BL - rot_dif_BR) / 4.0;
-      odom._yaw_rad = _rot2m * (-rot_dif_FL + rot_dif_FR - rot_dif_BL + rot_dif_BR) / (4.0 * _wheel_separation_sum_in_m);
+      odom._y_m =
+          _rot2m * (-rot_dif_FL + rot_dif_FR + rot_dif_BL - rot_dif_BR) / 4.0;
+      odom._yaw_rad = _rot2m * (-rot_dif_FL + rot_dif_FR - rot_dif_BL + rot_dif_BR) /
+                      (4.0 * _wheel_separation_sum_in_m);
       return odom;
    }
    else
@@ -292,7 +395,8 @@ MecanumPose MecanumDrive::getPoseIncrement()
 /// all motors in motor handler
 void MecanumDrive::debugMotorMapping()
 {
-   evo::log::get() << _logger_prefix << "Debug Motor Mapping is NOT implemented!" << evo::error;
+   evo::log::get() << _logger_prefix << "Debug Motor Mapping is NOT implemented!"
+                   << evo::error;
    return;
 
    if(_is_initialized)
