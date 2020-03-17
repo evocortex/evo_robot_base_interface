@@ -244,6 +244,8 @@ bool MecanumDrive::readWheelData()
 
       _current_position.back_left  = _motor_back_left->getRevolutions();
       _current_position.back_right = _motor_back_right->getRevolutions();
+
+      return true;
    }
    else
    {
