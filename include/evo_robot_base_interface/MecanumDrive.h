@@ -176,6 +176,12 @@ class MecanumDrive
                          MecanumWheelData& current_position,
                          MecanumWheelData& current_velocity);
 
+    void cmdVel2wheelData(const MecanumVel& cmd_vel, MecanumWheelData& cmd_wd);
+
+    bool setCmdVel(const MecanumVel& cmd_vel);
+
+
+
     /**
      * @brief Converts cmd vel to wheel rpm
      * 

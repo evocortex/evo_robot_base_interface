@@ -21,11 +21,16 @@
 namespace evo {
 
 MecanumDrive::MecanumDrive() :
-    _logger_prefix("MecanumDrive: "), _is_initialized(false),
-    _wheel_radius_in_m(0.0), _wheel_separation_length_in_m(0.0),
-    _wheel_separation_width_in_m(0.0), _wheel_separation_sum_in_m(0.0),
-    _last_rotation_back_left(0.0), _last_rotation_back_right(0.0),
-    _last_rotation_front_left(0.0), _last_rotation_front_right(0.0)
+    _logger_prefix("MecanumDrive: "), 
+    _is_initialized(false),
+    _wheel_radius_in_m(0.0), 
+    _wheel_separation_length_in_m(0.0),
+    _wheel_separation_width_in_m(0.0), 
+    _wheel_separation_sum_in_m(0.0),
+    _last_rotation_back_left(0.0), 
+    _last_rotation_back_right(0.0),
+    _last_rotation_front_left(0.0), 
+    _last_rotation_front_right(0.0)
 {
    evo::log::init("");
 }
@@ -158,27 +163,149 @@ void MecanumDrive::setWheelDistanceLeftRightInM(
    setWheelSeparationWidthInM(wheel_distance_left_right_in_m / 2.0);
 }
 
+// new version: cleaner code 
+// read all data in one cycle
+bool MecanumDrive::readWheelData()
+{
+   if(_is_initialized)
+   {
+      // get wheel speeds
+      _current_rpm.front_left  = _motor_front_left->getSpeedRPM();
+      _current_rpm.front_right = _motor_front_right->getSpeedRPM();
+
+      _current_rpm.back_left  = _motor_back_left->getSpeedRPM();
+      _current_rpm.back_right = _motor_back_right->getSpeedRPM();
+
+      // get positions
+      _current_position.front_left  = _motor_front_left->getRevolutions();
+      _current_position.front_right = _motor_front_right->getRevolutions();
+
+      _current_position.back_left  = _motor_back_left->getRevolutions();
+      _current_position.back_right = _motor_back_right->getRevolutions();
+   }
+   else
+   {
+      evo::log::get() << _logger_prefix << "not initialized yet! -> check" << evo::error;
+      checkInitState();
+      return false;
+   }
+}
+
+bool MecanumDrive::getOdomComplete(MecanumVel& odom_vel, 
+                                   MecanumPose& odom_pose_increment,
+                                   MecanumWheelData& current_position,
+                                   MecanumWheelData& current_velocity)
+{
+   if(!_is_initialized)
+   {      
+      evo::log::get() << _logger_prefix << "not initialized yet! -> check"
+                      << evo::error;
+      checkInitState();
+      return false;
+   }
+   else
+   {
+      // update 
+      if(!readWheelData()) return false;
+
+      wheelData2OdomVel(_current_rpm, odom_vel);
+
+      //wheelData2OdomPose(_current_position, odom_pose);
+      wheelData2OdomPoseInc(_current_position, _last_position, odom_pose_increment);
+
+      current_position = _current_position;
+      current_position *= 2 * M_PI;
+
+      current_velocity = _current_rpm;
+      current_velocity *= M_PI / 30.0;
+
+      return true;
+   }
+}
+
+void MecanumDrive::wheelData2OdomVel(const MecanumWheelData& wd, MecanumVel& mv)
+{
+   mv._x_ms = _rpm2ms * (-wd.front_left + wd.front_right - wd.back_left + wd.back_right) / 4.0;
+   mv._y_ms = _rpm2ms * ( wd.front_left + wd.front_right - wd.back_left - wd.back_right) / 4.0;
+   mv._yaw_rads = _rpm2ms * (wd.front_left + wd.front_right + wd.back_left + wd.back_right) / (4.0 * _wheel_separation_sum_in_m);
+}
+
+void MecanumDrive::wheelData2OdomPose(const MecanumWheelData& wd, MecanumPose& mp)
+{
+   mp._x_m = _rot2m * (-wd.front_left + wd.front_right - wd.back_left + wd.back_right) / 4.0;
+   mp._y_m = _rot2m * ( wd.front_left + wd.front_right - wd.back_left - wd.back_right) / 4.0;
+   mp._yaw_rad = _rot2m * (wd.front_left + wd.front_right + wd.back_left + wd.back_right) / (4.0 * _wheel_separation_sum_in_m);
+}
+
+void MecanumDrive::wheelData2OdomPoseInc(const MecanumWheelData& wd, MecanumWheelData& lwd, MecanumPose& mpi)
+{
+   MecanumWheelData inc_wd = wd;
+   inc_wd.back_left -= lwd.back_left;
+   inc_wd.back_right -= lwd.back_right;
+   inc_wd.front_left -= lwd.front_left;
+   inc_wd.front_right -= lwd.front_right;
+
+   wheelData2OdomPose(inc_wd, mpi);
+
+   lwd = wd;   
+}
+
+
+void MecanumDrive::cmdVel2wheelData(const MecanumVel& cmd_vel, MecanumWheelData& cmd_wd)
+{
+   cmd_wd.front_left = _ms2rpm * (-cmd_vel._x_ms + cmd_vel._y_ms + (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
+   cmd_wd.back_left  = _ms2rpm * (-cmd_vel._x_ms - cmd_vel._y_ms + (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
+
+   cmd_wd.front_right =_ms2rpm * ( cmd_vel._x_ms + cmd_vel._y_ms + (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
+   cmd_wd.back_right = _ms2rpm * ( cmd_vel._x_ms - cmd_vel._y_ms + (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
+}
+
+bool MecanumDrive::setCmdVel(const MecanumVel& cmd_vel)
+{
+   if(_is_initialized)
+   {
+      MecanumWheelData cmd_wd;
+      cmdVel2wheelData(cmd_vel, cmd_wd);
+
+      
+      // limit output speeds if cmd vel exceeds maximum
+
+      // apply to motors
+      bool error_flag = false;
+      if(!_motor_front_left->setTargetSpeed(cmd_wd.front_left))   error_flag |= true;
+      if(!_motor_front_right->setTargetSpeed(cmd_wd.front_right)) error_flag |= true;
+      if(!_motor_back_left->setTargetSpeed(cmd_wd.back_left))     error_flag |= true;
+      if(!_motor_back_right->setTargetSpeed(cmd_wd.back_right))   error_flag |= true;
+
+      if(error_flag)
+      {
+         evo::log::get() << _logger_prefix << "Couldn't set target speed!" << evo::error;
+         return false;
+      }
+      return true;
+   }
+   else
+   {
+      evo::log::get() << _logger_prefix << "not initialized yet! -> check" << evo::error;
+      checkInitState();
+      return false;
+   }
+}
+
+
+
+// this is old and may be deleted in the future
+// code is deprecated
+
 void MecanumDrive::setTargetSpeed(const MecanumVel& cmd_vel)
 {
    if(_is_initialized)
    {
-      float rpm_front_left =
-          _ms2rpm * (cmd_vel._x_ms - cmd_vel._y_ms -
-                     (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
-      float rpm_back_left =
-          _ms2rpm * (cmd_vel._x_ms + cmd_vel._y_ms -
-                     (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
+      float rpm_front_left = _ms2rpm * (-cmd_vel._x_ms + cmd_vel._y_ms + (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
+      float rpm_back_left  = _ms2rpm * (-cmd_vel._x_ms - cmd_vel._y_ms + (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
 
-      float rpm_front_right =
-          _ms2rpm * (cmd_vel._x_ms + cmd_vel._y_ms +
-                     (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
-      float rpm_back_right =
-          _ms2rpm * (cmd_vel._x_ms - cmd_vel._y_ms +
-                     (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
-
-      // invert left side
-      rpm_front_left *= (-1.0);
-      rpm_back_left *= (-1.0);
+      float rpm_front_right =_ms2rpm * (cmd_vel._x_ms + cmd_vel._y_ms + (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
+      float rpm_back_right = _ms2rpm * (cmd_vel._x_ms - cmd_vel._y_ms + (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
 
       // limit speeds
 
@@ -225,90 +352,6 @@ void MecanumDrive::setTargetSpeed(const MecanumVel& cmd_vel)
                       << evo::error;
       checkInitState();
    }
-}
-
-bool MecanumDrive::readWheelData()
-{
-   if(_is_initialized)
-   {
-      // get wheel speeds
-      _current_rpm.front_left  = _motor_front_left->getSpeedRPM();
-      _current_rpm.front_right = _motor_front_right->getSpeedRPM();
-
-      _current_rpm.back_left  = _motor_back_left->getSpeedRPM();
-      _current_rpm.back_right = _motor_back_right->getSpeedRPM();
-
-      // get positions
-      _current_position.front_left  = _motor_front_left->getRevolutions();
-      _current_position.front_right = _motor_front_right->getRevolutions();
-
-      _current_position.back_left  = _motor_back_left->getRevolutions();
-      _current_position.back_right = _motor_back_right->getRevolutions();
-   }
-   else
-   {
-      evo::log::get() << _logger_prefix << "not initialized yet! -> check"
-                      << evo::error;
-      checkInitState();
-      return false;
-   }
-}
-
-bool MecanumDrive::getOdomComplete(MecanumVel& odom_vel, 
-                                   MecanumPose& odom_pose_increment,
-                                   MecanumWheelData& current_position,
-                                   MecanumWheelData& current_velocity)
-{
-   if(!_is_initialized)
-   {      
-      evo::log::get() << _logger_prefix << "not initialized yet! -> check"
-                      << evo::error;
-      checkInitState();
-      return false;
-   }
-   else
-   {
-      // update 
-      if(!readWheelData()) return false;
-
-      wheelData2OdomVel(_current_rpm, odom_vel);
-
-      //wheelData2OdomPose(_current_position, odom_pose);
-      wheelData2OdomPoseInc(_current_position, _last_position, odom_pose_increment);
-
-      current_position = _current_position;
-      current_position *= 2 * M_PI;
-
-      current_velocity = _current_rpm;
-      current_velocity *= M_PI / 30.0;
-   }
-}
-
-void MecanumDrive::wheelData2OdomVel(const MecanumWheelData& wd, MecanumVel& mv)
-{
-   mv._x_ms = _rpm2ms * (-wd.front_left + wd.front_right - wd.back_left + wd.back_right) / 4.0;
-   mv._y_ms = _rpm2ms * ( wd.front_left + wd.front_right - wd.back_left - wd.back_right) / 4.0;
-   mv._yaw_rads = _rpm2ms * (wd.front_left + wd.front_right + wd.back_left + wd.back_right) / (4.0 * _wheel_separation_sum_in_m);
-}
-
-void MecanumDrive::wheelData2OdomPose(const MecanumWheelData& wd, MecanumPose& mp)
-{
-   mp._x_m = _rot2m * (-wd.front_left + wd.front_right - wd.back_left + wd.back_right) / 4.0;
-   mp._y_m = _rot2m * ( wd.front_left + wd.front_right - wd.back_left - wd.back_right) / 4.0;
-   mp._yaw_rad = _rot2m * (wd.front_left + wd.front_right + wd.back_left + wd.back_right) / (4.0 * _wheel_separation_sum_in_m);
-}
-
-void MecanumDrive::wheelData2OdomPoseInc(const MecanumWheelData& wd, MecanumWheelData& lwd, MecanumPose& mpi)
-{
-   MecanumWheelData inc_wd = wd;
-   inc_wd.back_left -= lwd.back_left;
-   inc_wd.back_right -= lwd.back_right;
-   inc_wd.front_left -= lwd.front_left;
-   inc_wd.front_right -= lwd.front_right;
-
-   wheelData2OdomPose(inc_wd, mpi);
-
-   lwd = wd;   
 }
 
 MecanumVel MecanumDrive::getOdom()
