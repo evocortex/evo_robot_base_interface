@@ -9,10 +9,10 @@
  *
  * @brief Class for the mecanum drive
  *
- * @version 0.1
- * @date 2019-08-09
+ * @version 0.2
+ * @date 2020-06-03
  *
- * @copyright Copyright (c) 2019 Evocortex GmbH
+ * @copyright Copyright (c) 2020 Evocortex GmbH
  *
  */
 
@@ -92,6 +92,11 @@ struct MecanumCovariance
    double cov_vel_yaw = 0.0;
 };
 
+
+// MMA: split the class here? -> separation of mecanum maths and hw access
+// new class MecanumMaths or so
+// we should think about a software redesign (keep a lot of code but organize different)
+
 enum MOTOR_MAPPING_MECANUM
 {
    NO_POSITION = 0,
@@ -125,13 +130,6 @@ class MecanumDrive
 
    bool _is_initialized;
    bool _verbose;
-
-   // TODO: delete this once unused
-   // save last ticks to create difference in getPoseIncement()
-   double _last_rotation_front_left;
-   double _last_rotation_front_right;
-   double _last_rotation_back_left;
-   double _last_rotation_back_right;
 
    MecanumWheelData _last_position;
    MecanumWheelData _current_position;
@@ -181,29 +179,7 @@ class MecanumDrive
     bool setCmdVel(const MecanumVel& cmd_vel);
 
 
-
-    /**
-     * @brief Converts cmd vel to wheel rpm
-     * 
-     * @param cmd_vel - target speed
-     */
-    void setTargetSpeed(const MecanumVel& cmd_vel);
-
-    /**
-     * @brief Calculates wheel odometry from wheel rpm (intregral)
-     * 
-     * @return MecanumVel 
-     */
-    MecanumVel getOdom();
-
-    /**
-     * @brief Get Pose increment relative to last call. Uses absolute wheel rotation ticks.
-     * 
-     * @return MecanumPose 
-     */
-    MecanumPose getPoseIncrement();
-
-
+    // dont use this 
     void debugMotorMapping();
 };
 } // namespace evo

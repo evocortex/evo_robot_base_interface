@@ -9,10 +9,10 @@
  *
  * @brief Class for holding all mcs and motors (also creation from params)
  *
- * @version 0.1
- * @date 2019-08-12
+ * @version 0.2
+ * @date 2020-06-03
  *
- * @copyright Copyright (c) 2019 Evocortex GmbH
+ * @copyright Copyright (c) 2020 Evocortex GmbH
  *
  */
 
@@ -40,6 +40,7 @@ struct MotorConfig
    evo_mbed::MotorControlMode mode = evo_mbed::MOTOR_CTRL_NONE;
    uint8_t motor_mapping           = 0;
    double pwm_limit                = 0.0;
+   double rpm_limit                = 0.0;
    double kp                       = 0.0;
    double ki                       = 0.0;
    double kd                       = 0.0;

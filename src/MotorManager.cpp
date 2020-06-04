@@ -9,10 +9,10 @@
  *
  * @brief Class for holding all mcs and motors (also creation from params)
  *
- * @version 0.1
- * @date 2019-08-12
+ * @version 0.2
+ * @date 2020-06-03
  *
- * @copyright Copyright (c) 2019 Evocortex GmbH
+ * @copyright Copyright (c) 2020 Evocortex GmbH
  *
  */
 
@@ -51,8 +51,7 @@ const bool MotorManager::initMotorMapping(MecanumDrive& md, LiftController& lc)
             {
                if(ms->getComID() == mc_cfg.id)
                {
-                  std::shared_ptr<evo_mbed::Motor> motor =
-                      ms->getMotor(motor_counter);
+                  std::shared_ptr<evo_mbed::Motor> motor = ms->getMotor(motor_counter);
                   if(motor != nullptr)
                   {
                      md.setMotorRef(motor, motor_cfg.motor_mapping);
@@ -68,8 +67,7 @@ const bool MotorManager::initMotorMapping(MecanumDrive& md, LiftController& lc)
             {
                if(ms->getComID() == mc_cfg.id)
                {
-                  std::shared_ptr<evo_mbed::Motor> motor =
-                      ms->getMotor(motor_counter);
+                  std::shared_ptr<evo_mbed::Motor> motor = ms->getMotor(motor_counter);
                   if(motor != nullptr)
                   {
                      lc.setMotorRef(motor, motor_cfg.motor_mapping);
@@ -81,8 +79,9 @@ const bool MotorManager::initMotorMapping(MecanumDrive& md, LiftController& lc)
          ++motor_counter;
       }
    }
-   evo::log::get() << _logger_prefix << "mapped " << +mapped_motors << " motors"
-                   << evo::info;
+   evo::log::get() << _logger_prefix << "mapped " 
+                   << +mapped_motors << " motors"
+   << evo::info;
 
    return true;
 }
@@ -92,7 +91,8 @@ const bool MotorManager::initCanInterface(const std::string& can_interface_name)
    if(_can_interface == nullptr)
    {
       evo::log::get() << _logger_prefix << "cannot init CAN interface! nullptr!"
-                      << evo::error;
+      << evo::error;
+      
       return false;
    }
    return (_can_interface->init(can_interface_name) == evo_mbed::RES_OK);
@@ -156,6 +156,11 @@ const bool MotorManager::initMotor(std::shared_ptr<evo_mbed::Motor> motor,
       if(!motor->setGearRatio(motor_config.gear_ratio))
       {
          evo::log::get() << logger_prefix << "failed to set gear ratio!" << evo::error;
+         error_occured |= true;
+      }
+      if(!motor->setMaxSpeedRPM(motor_config.rpm_limit))
+      {
+         evo::log::get() << logger_prefix << "failed to set rpm limit!" << evo::error;
          error_occured |= true;
       }
    }  
@@ -237,22 +242,21 @@ const bool MotorManager::initFromConfig()
 
       if(!ms->setComTimeout(ms_config.timeout_ms))
       {
-         evo::log::get() << _logger_prefix << "failed to set timeout on mc"
+         evo::log::get() << _logger_prefix << "failed to set timeout on ms"
                          << +ms_config.id << evo::error;
          clean_init = false;
       }
       else
       {
          evo::log::get() << _logger_prefix << "init " << +ms_config.n_motors
-                         << " motors on mc" << +ms_config.id << evo::info;
+                         << " motors on ms" << +ms_config.id << evo::info;
          for(uint8_t motor_id = 0; motor_id < ms_config.n_motors; motor_id++)
          {
             std::shared_ptr<evo_mbed::Motor> motor = ms->getMotor(motor_id);
-            std::string logger_prefix              = _logger_prefix + "ms" +
+            std::string logger_prefix = _logger_prefix + "ms" +
                                         std::to_string(ms_config.id) + "-motor" +
                                         std::to_string(motor_id) + ": ";
-            if(!initMotor(motor, logger_prefix,
-                          ms_config.motor_configs.at(motor_id)))
+            if(!initMotor(motor, logger_prefix, ms_config.motor_configs.at(motor_id)))
             {
                evo::log::get()
                    << logger_prefix << "init not successfull!" << evo::error;
@@ -277,9 +281,8 @@ const bool MotorManager::checkStatus()
 
       case evo_mbed::MOTOR_SHIELD_STS_ERR:
       {
-         evo::log::get()
-             << _logger_prefix
-             << "Critical error with can-interface! (Disconnected?) -> Exiting"
+         evo::log::get() << _logger_prefix << "Critical error with can-interface!" 
+                        << "(Disconnected?) -> Exiting"
              << evo::error;
          std::raise(SIGTERM);
       }
@@ -328,14 +331,14 @@ const bool MotorManager::setOperationStatus(const bool enable)
             {
                if(!motor->setOperationStatus(evo_mbed::MOTOR_STS_ENABLED))
                {
-                  evo::log::get()
-                      << _logger_prefix << "failed to enable mc" << +ms_config.id
-                      << "-motor" << +motor_id << evo::error;
+                  evo::log::get() << _logger_prefix << "failed to enable ms" << +ms_config.id
+                      << "-motor" << +motor_id 
+                  << evo::error;
                   clean_operation = false;
                }
                else
                {
-                  evo::log::get() << _logger_prefix << "enabled mc" << +ms_config.id
+                  evo::log::get() << _logger_prefix << "enabled ms" << +ms_config.id
                                   << "-motor" << +motor_id << evo::info;
                }
             }
@@ -344,13 +347,13 @@ const bool MotorManager::setOperationStatus(const bool enable)
                if(!motor->setOperationStatus(evo_mbed::MOTOR_STS_DISABLED))
                {
                   evo::log::get()
-                      << _logger_prefix << "failed to disable mc" << +ms_config.id
+                      << _logger_prefix << "failed to disable ms" << +ms_config.id
                       << "-motor" << +motor_id << evo::error;
                   clean_operation = false;
                }
                else
                {
-                  evo::log::get() << _logger_prefix << "disabled mc" << +ms_config.id
+                  evo::log::get() << _logger_prefix << "disabled ms" << +ms_config.id
                                   << "-motor" << +motor_id << evo::info;
                }
             }
@@ -358,7 +361,7 @@ const bool MotorManager::setOperationStatus(const bool enable)
       }
       else
       {
-         evo::log::get() << _logger_prefix << "failed to enable motors on mc"
+         evo::log::get() << _logger_prefix << "failed to enable motors on ms"
                          << +ms_config.id << " - couldn't find matching config data"
                          << evo::error;
          clean_operation = false;
