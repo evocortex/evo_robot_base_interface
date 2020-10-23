@@ -159,6 +159,33 @@ void MecanumDrive::setWheelDistanceLeftRightInM(
    setWheelSeparationWidthInM(wheel_distance_left_right_in_m / 2.0);
 }
 
+
+
+bool MecanumDrive::resetEncoders()
+{
+      if(_is_initialized)
+   {
+      // reset all motors
+      _motor_front_left->resetRevs();
+      _motor_front_right->resetRevs();
+
+      _motor_back_left->resetRevs();
+      _motor_back_right->resetRevs();
+
+      // reset last position
+      _last_position = MecanumWheelData();
+
+      return true;
+   }
+   else
+   {
+      evo::log::get() << _logger_prefix << "not initialized yet! -> check" << evo::error;
+      checkInitState();
+      return false;
+   }
+}
+
+
 // new version: cleaner code 
 // read all data in one cycle
 bool MecanumDrive::readWheelData()
