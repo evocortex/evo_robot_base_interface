@@ -163,19 +163,21 @@ void MecanumDrive::setWheelDistanceLeftRightInM(
 
 bool MecanumDrive::resetEncoders()
 {
-      if(_is_initialized)
+   if(_is_initialized)
    {
+      bool success = true;
       // reset all motors
-      _motor_front_left->resetRevs();
-      _motor_front_right->resetRevs();
 
-      _motor_back_left->resetRevs();
-      _motor_back_right->resetRevs();
+      success &= _motor_front_left->resetRevs();
+      success &= _motor_front_right->resetRevs();
 
+      success &= _motor_back_left->resetRevs();
+      success &= _motor_back_right->resetRevs();
+      
       // reset last position
       _last_position = MecanumWheelData();
 
-      return true;
+      return success;
    }
    else
    {
