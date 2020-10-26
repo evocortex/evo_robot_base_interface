@@ -350,6 +350,14 @@ bool MecanumDrive::setCmdVel(const MecanumVel& cmd_vel)
 
 
 
+void MecanumDrive::printWheelData(const MecanumWheelData& wd, const std::string& nametag)
+{
+   evo::log::get() << _logger_prefix << "Printing [" << nametag << "] wheeldata:" << evo::info;
+   evo::log::get() << _logger_prefix << "Front Left: "  << wd.front_left << evo::info;
+   evo::log::get() << _logger_prefix << "Front Right: " << wd.front_right << evo::info;
+   evo::log::get() << _logger_prefix << "Back Left: "   << wd.back_left << evo::info;
+   evo::log::get() << _logger_prefix << "Back Right: "  << wd.back_right << evo::info;
+}
 
 /// this function should not exist in this class. rather a function that discovers
 /// all motors in motor handler

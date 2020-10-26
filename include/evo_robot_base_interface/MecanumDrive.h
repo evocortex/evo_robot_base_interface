@@ -182,6 +182,8 @@ class MecanumDrive
 
     // dont use this 
     void debugMotorMapping();
+
+    void printWheelData(const MecanumWheelData& wd, const std::string& nametag);
 };
 } // namespace evo
 #endif // MECANUMDRIVE_H
