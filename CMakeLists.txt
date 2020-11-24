@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 2.8.3)
 project(evo_robot_base_interface)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
+find_package(evo-mbed-tools REQUIRED)
+
 add_compile_options(-std=c++14)
 
 ## Find catkin macros and libraries
@@ -27,7 +30,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
    INCLUDE_DIRS include
-   LIBRARIES evo_robot_base_interface ${EVO_MBED_LIB}
+   LIBRARIES evo_robot_base_interface
    CATKIN_DEPENDS evo_motor_shield_interface
 #  DEPENDS system_lib
 )
@@ -42,9 +45,6 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
 )
-
-## Find important EVO_MBED_LIB
-find_library(EVO_MBED_LIB libevo_mbed_tools.a)
 
 ## Declare a C++ library
  add_library(${PROJECT_NAME}
@@ -64,6 +64,7 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
+  evo-mbed-tools::evo-mbed-tools
 )
 
 ## Declare a C++ executable
