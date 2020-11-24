@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(evo_robot_base_interface)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 find_package(evo-mbed-tools REQUIRED)
 
 add_compile_options(-std=c++14)
