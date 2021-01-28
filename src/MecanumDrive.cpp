@@ -159,6 +159,35 @@ void MecanumDrive::setWheelDistanceLeftRightInM(
    setWheelSeparationWidthInM(wheel_distance_left_right_in_m / 2.0);
 }
 
+
+
+bool MecanumDrive::resetEncoders()
+{
+   if(_is_initialized)
+   {
+      bool success = true;
+      // reset all motors
+
+      success &= _motor_front_left->resetRevs();
+      success &= _motor_front_right->resetRevs();
+
+      success &= _motor_back_left->resetRevs();
+      success &= _motor_back_right->resetRevs();
+      
+      // reset last position
+      _last_position = MecanumWheelData();
+
+      return success;
+   }
+   else
+   {
+      evo::log::get() << _logger_prefix << "not initialized yet! -> check" << evo::error;
+      checkInitState();
+      return false;
+   }
+}
+
+
 // new version: cleaner code 
 // read all data in one cycle
 bool MecanumDrive::readWheelData()
@@ -321,6 +350,14 @@ bool MecanumDrive::setCmdVel(const MecanumVel& cmd_vel)
 
 
 
+void MecanumDrive::printWheelData(const MecanumWheelData& wd, const std::string& nametag)
+{
+   evo::log::get() << _logger_prefix << "Printing [" << nametag << "] wheeldata:" << evo::info;
+   evo::log::get() << _logger_prefix << "Front Left: "  << wd.front_left << evo::info;
+   evo::log::get() << _logger_prefix << "Front Right: " << wd.front_right << evo::info;
+   evo::log::get() << _logger_prefix << "Back Left: "   << wd.back_left << evo::info;
+   evo::log::get() << _logger_prefix << "Back Right: "  << wd.back_right << evo::info;
+}
 
 /// this function should not exist in this class. rather a function that discovers
 /// all motors in motor handler

@@ -161,7 +161,8 @@ class MecanumDrive
     void setWheelDistanceFrontBackInM(const double wheel_distance_front_back_in_m);
     void setWheelDistanceLeftRightInM(const double wheel_distance_left_right_in_m);
 
-    // update all wheel data 
+    // update all wheel data
+    bool resetEncoders(); 
     bool readWheelData();
 
     void wheelData2OdomVel(const MecanumWheelData& wd, MecanumVel& mv);
@@ -181,6 +182,8 @@ class MecanumDrive
 
     // dont use this 
     void debugMotorMapping();
+
+    void printWheelData(const MecanumWheelData& wd, const std::string& nametag);
 };
 } // namespace evo
 #endif // MECANUMDRIVE_H
