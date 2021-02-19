@@ -16,36 +16,34 @@
  *
  */
 
-#include "evo_robot_base_interface/MecanumDrive.h"
+#include "evo_robot_base_interface/Diff4Drive.h"
 
 namespace evo {
-
-MecanumDrive::MecanumDrive() :
-    _logger_prefix("MecanumDrive: "), 
+// TODO: Check maths
+Diff4Drive::Diff4Drive() : Drive2d()
 {
    evo::log::init("");
+   _logger_prefix = std::string("Diff4Drive: ");
 }
 
 
-
-
-void MecanumDrive::wheelData2OdomVel(const MecanumWheelData& wd, MecanumVel& mv)
+void Diff4Drive::wheelData2OdomVel(const WheelData& wd, Vel2d& mv)
 {
    mv._x_ms = _rpm2ms * (-wd.front_left + wd.front_right - wd.back_left + wd.back_right) / 4.0;
-   mv._y_ms = _rpm2ms * ( wd.front_left + wd.front_right - wd.back_left - wd.back_right) / 4.0;
+   mv._y_ms = 0;
    mv._yaw_rads = _rpm2ms * (wd.front_left + wd.front_right + wd.back_left + wd.back_right) / (4.0 * _wheel_separation_sum_in_m);
 }
 
-void MecanumDrive::wheelData2OdomPose(const MecanumWheelData& wd, MecanumPose& mp)
+void Diff4Drive::wheelData2OdomPose(const WheelData& wd, Pose2d& mp)
 {
    mp._x_m = _rot2m * (-wd.front_left + wd.front_right - wd.back_left + wd.back_right) / 4.0;
-   mp._y_m = _rot2m * ( wd.front_left + wd.front_right - wd.back_left - wd.back_right) / 4.0;
+   mp._y_m = 0;
    mp._yaw_rad = _rot2m * (wd.front_left + wd.front_right + wd.back_left + wd.back_right) / (4.0 * _wheel_separation_sum_in_m);
 }
 
-void MecanumDrive::wheelData2OdomPoseInc(const MecanumWheelData& wd, MecanumWheelData& lwd, MecanumPose& mpi)
+void Diff4Drive::wheelData2OdomPoseInc(const WheelData& wd, WheelData& lwd, Pose2d& mpi)
 {
-   MecanumWheelData inc_wd = wd;
+   WheelData inc_wd = wd;
    inc_wd.back_left -= lwd.back_left;
    inc_wd.back_right -= lwd.back_right;
    inc_wd.front_left -= lwd.front_left;
@@ -57,13 +55,14 @@ void MecanumDrive::wheelData2OdomPoseInc(const MecanumWheelData& wd, MecanumWhee
 }
 
 
-void MecanumDrive::cmdVel2wheelData(const MecanumVel& cmd_vel, MecanumWheelData& cmd_wd)
+void Diff4Drive::cmdVel2wheelData(const Vel2d& cmd_vel, WheelData& cmd_wd)
 {
-   cmd_wd.front_left = _ms2rpm * (-cmd_vel._x_ms + cmd_vel._y_ms + (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
-   cmd_wd.back_left  = _ms2rpm * (-cmd_vel._x_ms - cmd_vel._y_ms + (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
+   // TODO: Check if this works on the robots
+   cmd_wd.front_left = _ms2rpm * (-cmd_vel._x_ms - (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
+   cmd_wd.back_left  = _ms2rpm * (-cmd_vel._x_ms - (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
 
-   cmd_wd.front_right =_ms2rpm * ( cmd_vel._x_ms + cmd_vel._y_ms + (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
-   cmd_wd.back_right = _ms2rpm * ( cmd_vel._x_ms - cmd_vel._y_ms + (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
+   cmd_wd.front_right =_ms2rpm * (-cmd_vel._x_ms + (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
+   cmd_wd.back_right = _ms2rpm * (-cmd_vel._x_ms + (_wheel_separation_sum_in_m * cmd_vel._yaw_rads));
 }
 
 } // namespace evo
