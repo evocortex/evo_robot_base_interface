@@ -49,7 +49,7 @@ void Drive2d::setWheelDistanceLeftRightInM(const double wheel_distance_left_righ
 
 bool Drive2d::checkInitState()
 {
-   bool _is_initialized = checkMotors() && checkParams();
+   _is_initialized = checkMotors() && checkParams();
    evo::log::get() << _logger_prefix << "init state: " << _is_initialized
                    << evo::info;
    return _is_initialized;
