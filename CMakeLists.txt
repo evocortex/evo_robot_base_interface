@@ -49,12 +49,20 @@ include_directories(
 ## Declare a C++ library
  add_library(${PROJECT_NAME}
    src/LiftController.cpp
-   src/MecanumDrive.cpp
    src/MotorManager.cpp
 
+   src/2dKinematics.cpp
+   src/Diff4Drive.cpp
+   src/MecanumDrive.cpp
+
+
    include/evo_robot_base_interface/LiftController.h
-   include/evo_robot_base_interface/MecanumDrive.h
    include/evo_robot_base_interface/MotorManager.h
+
+   include/evo_robot_base_interface/2dKinematics.h
+   include/evo_robot_base_interface/Diff4Drive.h
+   include/evo_robot_base_interface/MecanumDrive.h
+
  )
 
 ## Add cmake target dependencies of the library

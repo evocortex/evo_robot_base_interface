@@ -33,7 +33,7 @@ MotorManager::~MotorManager()
    _can_interface->release();
 }
 
-const bool MotorManager::initMotorMapping(MecanumDrive& md, LiftController& lc)
+const bool MotorManager::initMotorMapping(Drive2d& drive, LiftController& lc)
 {
    evo::log::get() << _logger_prefix << "init motor mapping!" << evo::info;
    uint8_t mapped_motors = 0;
@@ -44,7 +44,7 @@ const bool MotorManager::initMotorMapping(MecanumDrive& md, LiftController& lc)
       {
          // only allow drive motors to be mapped to the mecanum drive
          if((motor_cfg.type == evo_mbed::MOTOR_TYPE_DRIVE) &&
-            (motor_cfg.motor_mapping > MOTOR_MAPPING_MECANUM::NO_POSITION))
+            (motor_cfg.motor_mapping > MOTOR_MAPPING::NO_POSITION))
          {
             // search in actual connected motors
             for(auto& ms : _vec_motor_shields)
@@ -54,7 +54,7 @@ const bool MotorManager::initMotorMapping(MecanumDrive& md, LiftController& lc)
                   std::shared_ptr<evo_mbed::Motor> motor = ms->getMotor(motor_counter);
                   if(motor != nullptr)
                   {
-                     md.setMotorRef(motor, motor_cfg.motor_mapping);
+                     drive.setMotorRef(motor, motor_cfg.motor_mapping);
                      ++mapped_motors;
                   }
                }

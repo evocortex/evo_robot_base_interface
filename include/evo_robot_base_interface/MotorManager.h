@@ -25,7 +25,7 @@
 #include "evo_mbed/tools/com/ComServer.h"
 
 // needed for motor mapping - room for other plugins
-#include "evo_robot_base_interface/MecanumDrive.h"
+#include "evo_robot_base_interface/2dKinematics.h"
 #include "evo_robot_base_interface/LiftController.h"
 
 // custom logger
@@ -116,7 +116,7 @@ class MotorManager
     * @param md
     * @return true if successful
     */
-   const bool initMotorMapping(MecanumDrive& md, LiftController& lc);
+   const bool initMotorMapping(Drive2d& drive, LiftController& lc);
 
    /**
     * @brief setOperationStatus - function to enable or disable all connected motors
